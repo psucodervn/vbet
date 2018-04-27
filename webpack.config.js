@@ -29,4 +29,7 @@ module.exports = {
     path: path.join(__dirname, 'dist'),
     filename: 'server.js',
   },
+  node: {
+    __dirname: false,
+  }
 };

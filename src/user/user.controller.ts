@@ -12,6 +12,7 @@ import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/from';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/toArray';
+import 'rxjs/add/operator/take';
 
 interface User {
   id: number;
@@ -24,14 +25,12 @@ const users: User[] = [
 ];
 
 interface FindRequest {}
-
 interface FindOneRequest {
   id: number;
 }
 
 interface UserService {
   findOne(data: FindOneRequest): Observable<any>;
-
   find(data: FindRequest): Observable<any>;
 }
 
@@ -45,27 +44,31 @@ export class UserController implements OnModuleInit {
   }
 
   @Get()
-  getUsers(): Observable<any[]> {
+  getUsers(): Observable<any> {
     const results = this.userService.find({});
-    return results.toArray();
+    return results;
   }
 
   @Get(':id')
   getUserById(
     @Param('id', new ParseIntPipe())
     id,
-  ): Observable<any> {
+  ): Observable<User> {
     return this.userService.findOne({ id: parseInt(id, 10) });
   }
 
   // noinspection JSUnusedLocalSymbols
   @GrpcRoute('UserService', 'Find')
-  find(data: FindRequest): Observable<User> {
-    return Observable.of(...users);
+  find(data: FindRequest): Observable<any> {
+    return Observable.of({
+      users,
+    });
   }
 
   @GrpcRoute('UserService', 'FindOne')
-  findOne(data: FindOneRequest): Observable<User> {
-    return Observable.of(users.find(value => value.id === data.id));
+  findOne(data: FindOneRequest): Observable<any> {
+    return Observable.of({
+      user: users.find(value => value.id === data.id),
+    });
   }
 }

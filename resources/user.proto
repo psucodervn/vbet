@@ -3,8 +3,8 @@ syntax = "proto3";
 package user;
 
 service UserService {
-  rpc FindOne (FindOneRequest) returns (User) {}
-  rpc Find (FindRequest) returns (stream User) {}
+  rpc FindOne (FindOneRequest) returns (FindOneResponse) {}
+  rpc Find (FindRequest) returns (FindResponse) {}
 }
 
 message User {
@@ -19,4 +19,7 @@ message FindResponse {
 
 message FindOneRequest {
   int32 id = 1;
+}
+message FindOneResponse {
+  User user = 1;
 }
