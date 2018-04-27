@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package user;
+
+service UserService {
+  rpc FindOne (FindOneRequest) returns (User) {}
+  rpc Find (FindRequest) returns (stream User) {}
+}
+
+message User {
+  int32 id = 1;
+  string name = 2;
+}
+
+message FindRequest {}
+message FindResponse {
+  repeated User users = 1;
+}
+
+message FindOneRequest {
+  int32 id = 1;
+}
