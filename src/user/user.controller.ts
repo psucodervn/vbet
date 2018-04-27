@@ -11,6 +11,7 @@ import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/from';
 import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/toArray';
 
 interface User {
   id: number;
@@ -22,8 +23,7 @@ const users: User[] = [
   { id: 2, name: 'Le Manh Hung' },
 ];
 
-interface FindRequest {
-}
+interface FindRequest {}
 
 interface FindOneRequest {
   id: number;
@@ -45,17 +45,15 @@ export class UserController implements OnModuleInit {
   }
 
   @Get()
-  async getUsers(): Promise<User[]> {
+  getUsers(): Observable<any[]> {
     const results = this.userService.find({});
-    const res: User[] = [];
-    await results.forEach(value => res.push(value));
-    return res;
+    return results.toArray();
   }
 
   @Get(':id')
   getUserById(
     @Param('id', new ParseIntPipe())
-      id,
+    id,
   ): Observable<any> {
     return this.userService.findOne({ id: parseInt(id, 10) });
   }
@@ -63,7 +61,7 @@ export class UserController implements OnModuleInit {
   // noinspection JSUnusedLocalSymbols
   @GrpcRoute('UserService', 'Find')
   find(data: FindRequest): Observable<User> {
-    return Observable.from(users);
+    return Observable.of(...users);
   }
 
   @GrpcRoute('UserService', 'FindOne')
