@@ -12,7 +12,8 @@ import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/from';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/toArray';
-import 'rxjs/add/operator/take';
+import 'rxjs/add/operator/count';
+import 'rxjs/add/operator/single';
 
 interface User {
   id: number;
@@ -44,17 +45,20 @@ export class UserController implements OnModuleInit {
   }
 
   @Get()
-  getUsers(): Observable<any> {
+  async getUsers(): Promise<User[]> {
     const results = this.userService.find({});
-    return results;
+    return await results.map(v => v.users).toPromise();
   }
 
   @Get(':id')
-  getUserById(
+  async getUserById(
     @Param('id', new ParseIntPipe())
     id,
-  ): Observable<User> {
-    return this.userService.findOne({ id: parseInt(id, 10) });
+  ): Promise<User> {
+    return await this.userService
+      .findOne({ id: parseInt(id, 10) })
+      .map(v => v.user)
+      .toPromise();
   }
 
   // noinspection JSUnusedLocalSymbols
@@ -66,9 +70,9 @@ export class UserController implements OnModuleInit {
   }
 
   @GrpcRoute('UserService', 'FindOne')
-  findOne(data: FindOneRequest): Observable<any> {
-    return Observable.of({
+  findOne(data: FindOneRequest): { user: User } {
+    return {
       user: users.find(value => value.id === data.id),
-    });
+    };
   }
 }
