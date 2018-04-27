@@ -12,4 +12,5 @@ async function bootstrap() {
     module.hot.dispose(() => app.close());
   }
 }
+// noinspection JSIgnoredPromiseFromCall
 bootstrap();
