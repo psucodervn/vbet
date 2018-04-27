@@ -35,6 +35,7 @@
     "@types/supertest": "^2.0.4",
     "husky": "^1.0.0-rc.2",
     "jest": "^21.2.1",
+    "lint-staged": "^7.0.5",
     "nodemon": "^1.14.1",
     "prettier": "^1.11.1",
     "supertest": "^3.0.0",
@@ -48,11 +49,7 @@
     "webpack-node-externals": "^1.6.0"
   },
   "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
+    "moduleFileExtensions": ["js", "json", "ts"],
     "rootDir": "src",
     "testRegex": ".spec.ts$",
     "transform": {
@@ -62,8 +59,11 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn format",
+      "pre-commit": "lint-staged",
       "pre-push": "yarn test"
     }
+  },
+  "lint-staged": {
+    "*.{ts,js,json,md}": ["prettier --write", "git add"]
   }
 }
