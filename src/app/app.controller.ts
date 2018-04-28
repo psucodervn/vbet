@@ -6,7 +6,7 @@ import {
   Param,
 } from '@nestjs/common';
 import { Client, ClientGrpc } from '@nestjs/microservices';
-import { grpcClientOptions } from './grpc-client.options';
+import { grpcOptions } from '../shared/grpc.options';
 import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/from';
@@ -21,11 +21,6 @@ interface User {
   name: string;
 }
 
-const users: User[] = [
-  { id: 1, name: 'Hung Le' },
-  { id: 2, name: 'Le Manh Hung' },
-];
-
 interface FindRequest {}
 interface FindOneRequest {
   id: number;
@@ -39,7 +34,7 @@ interface UserService {
 @Controller()
 export class AppController implements OnModuleInit {
   // prettier-ignore
-  @Client(grpcClientOptions)
+  @Client(grpcOptions)
   private readonly client: ClientGrpc;
   private userService: UserService;
 
