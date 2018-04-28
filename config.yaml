@@ -1,3 +1,5 @@
-ports:
-  - '4000:4000'
-  - '80'
+app:
+  port: 3000
+
+grpc:
+  url: localhost:4000

@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
-import { Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
+@Injectable()
 export class ConfigService {
   private readonly config;
   private readonly logger: Logger = new Logger(ConfigService.name);
@@ -14,7 +15,7 @@ export class ConfigService {
     }
   }
 
-  get(key: string): string {
+  get(key: string): any {
     return this.config[key];
   }
 }

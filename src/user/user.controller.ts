@@ -1,6 +1,5 @@
-import { Controller, OnModuleInit } from '@nestjs/common';
-import { Client, ClientGrpc, GrpcRoute } from '@nestjs/microservices';
-import { grpcClientOptions } from '../app/grpc-client.options';
+import { Controller } from '@nestjs/common';
+import { GrpcRoute } from '@nestjs/microservices';
 import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/from';
@@ -24,20 +23,8 @@ interface FindOneRequest {
   id: number;
 }
 
-interface UserService {
-  findOne(data: FindOneRequest): Observable<any>;
-  find(data: FindRequest): Observable<any>;
-}
-
 @Controller('/users')
-export class UserController implements OnModuleInit {
-  @Client(grpcClientOptions) private readonly client: ClientGrpc;
-  private userService: UserService;
-
-  onModuleInit(): any {
-    this.userService = this.client.getService<UserService>('UserService');
-  }
-
+export class UserController {
   // noinspection JSUnusedLocalSymbols
   @GrpcRoute('UserService', 'Find')
   find(data: FindRequest): Observable<any> {
