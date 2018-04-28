@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
-import { grpcClientOptions } from './grpc-client.options';
+import { grpcClientOptions } from './app/grpc-client.options';
 
 declare const module: any;
 

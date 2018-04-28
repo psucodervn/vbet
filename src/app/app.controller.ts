@@ -6,7 +6,7 @@ import {
   Param,
 } from '@nestjs/common';
 import { Client, ClientGrpc } from '@nestjs/microservices';
-import { grpcClientOptions } from '../grpc-client.options';
+import { grpcClientOptions } from './grpc-client.options';
 import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/from';

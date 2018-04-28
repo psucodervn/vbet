@@ -1,6 +1,6 @@
 {
-  "watch": ["src", "resources"],
+  "watch": ["src/user", "src/shared", "data", "config.yaml"],
   "ext": "ts,proto",
   "ignore": ["src/**/*.spec.ts"],
-  "exec": "ts-node -r tsconfig-paths/register src/main.user.ts"
+  "exec": "ts-node -r tsconfig-paths/register src/user/main.user.ts"
 }

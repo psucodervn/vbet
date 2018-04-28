@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { UserModule } from './user/user.module';
+import { UserModule } from './user.module';
 import { Transport } from '@nestjs/microservices';
 import * as path from 'path';
 
@@ -8,7 +8,7 @@ async function bootstrap() {
     transport: Transport.GRPC,
     options: {
       package: 'user',
-      protoPath: path.join(__dirname, '../resources/user.proto'),
+      protoPath: path.join(__dirname, '../../data/user.proto'),
       url: '0.0.0.0:4000',
     },
   });
