@@ -44,23 +44,6 @@ export class UserController implements OnModuleInit {
     this.userService = this.client.getService<UserService>('UserService');
   }
 
-  @Get()
-  async getUsers(): Promise<User[]> {
-    const results = this.userService.find({});
-    return await results.map(v => v.users).toPromise();
-  }
-
-  @Get(':id')
-  async getUserById(
-    @Param('id', new ParseIntPipe())
-    id,
-  ): Promise<User> {
-    return await this.userService
-      .findOne({ id: parseInt(id, 10) })
-      .map(v => v.user)
-      .toPromise();
-  }
-
   // noinspection JSUnusedLocalSymbols
   @GrpcRoute('UserService', 'Find')
   find(data: FindRequest): Observable<any> {
