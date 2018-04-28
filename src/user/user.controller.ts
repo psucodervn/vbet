@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  OnModuleInit,
-  Param,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Controller, OnModuleInit } from '@nestjs/common';
 import { Client, ClientGrpc, GrpcRoute } from '@nestjs/microservices';
 import { grpcClientOptions } from '../grpc-client.options';
 import { Observable } from 'rxjs/Observable';

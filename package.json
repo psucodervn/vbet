@@ -6,9 +6,8 @@
   "license": "MIT",
   "scripts": {
     "format": "prettier --write \"**/*.ts\"",
-    "start": "ts-node -r tsconfig-paths/register src/main.ts",
-    "start:user": "ts-node -r tsconfig-paths/register src/main.user.ts",
-    "start:dev": "nodemon",
+    "start:user": "nodemon --config nodemon.user.json",
+    "start:api": "nodemon --config nodemon.api.json",
     "prestart:prod": "rm -rf dist && tsc",
     "start:prod": "node dist/main.js",
     "start:hmr": "node dist/server",
