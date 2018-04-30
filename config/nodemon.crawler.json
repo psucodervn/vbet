@@ -1,0 +1,6 @@
+{
+  "watch": ["src/crawler", "src/shared", "data", "config.yaml"],
+  "ext": "ts,proto",
+  "ignore": ["src/**/*.spec.ts"],
+  "exec": "ts-node -r tsconfig-paths/register src/crawler/main.crawler.ts"
+}

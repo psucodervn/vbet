@@ -2,4 +2,18 @@ app:
   port: 3000
 
 grpc:
-  url: localhost:4000
+  user:
+    url: localhost:4000
+    file_path: data/user.proto
+  crawler:
+    url: localhost:4001
+    file_path: data/crawler.proto
+
+redis:
+  host: 127.0.0.1
+  port: 6379
+  password:
+
+mongo:
+  host: 127.0.0.1
+  database: vbet

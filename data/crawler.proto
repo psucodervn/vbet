@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package crawler;
+
+service CrawlerService {
+    rpc Find (FindRequest) returns (FindResponse) {}
+}
+
+message FindRequest {}
+message FindResponse {
+    bool status = 1;
+}

@@ -31,17 +31,28 @@ interface UserService {
   find(data: FindRequest): Observable<any>;
 }
 
+interface CrawlerService {
+  find(data: FindRequest): Observable<any>;
+}
+
 @Controller()
 export class AppController implements OnModuleInit {
   // prettier-ignore
-  @Client(grpcOptions)
+  @Client(grpcOptions('user'))
   private readonly client: ClientGrpc;
   private userService: UserService;
+  // prettier-ignore
+  @Client(grpcOptions('crawler'))
+  private readonly crawlerClient: ClientGrpc;
+  private crawlerService: CrawlerService;
 
   constructor(private readonly appService: AppService) {}
 
   onModuleInit(): any {
     this.userService = this.client.getService<UserService>('UserService');
+    this.crawlerService = this.crawlerClient.getService<CrawlerService>(
+      'CrawlerService',
+    );
   }
 
   @Get('/users')
@@ -62,5 +73,10 @@ export class AppController implements OnModuleInit {
   @Get('/')
   root() {
     return this.appService.root();
+  }
+
+  @Get('/crawler')
+  async getCrawler() {
+    return await this.crawlerService.find({}).toPromise();
   }
 }

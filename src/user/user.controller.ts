@@ -34,9 +34,9 @@ export class UserController {
   }
 
   @GrpcRoute('UserService', 'FindOne')
-  findOne(data: FindOneRequest): { user: User } {
-    return {
+  findOne(data: FindOneRequest): Observable<any> {
+    return Observable.of({
       user: users.find(value => value.id === data.id),
-    };
+    });
   }
 }

@@ -3,12 +3,15 @@ import * as path from 'path';
 import { ConfigService } from './config.service';
 
 const configService: ConfigService = new ConfigService(`config.yaml`);
+const grpcConfigs = configService.get('grpc');
 
-export const grpcOptions: ClientOptions = {
+export const grpcOptions: ((name: string) => ClientOptions) = (
+  name: string,
+) => ({
   transport: Transport.GRPC,
   options: {
-    package: 'user',
-    protoPath: path.join(__dirname, '../../data/user.proto'),
-    url: configService.get('grpc').url,
+    package: name,
+    url: grpcConfigs[name].url,
+    protoPath: grpcConfigs[name].file_path,
   },
-};
+});
