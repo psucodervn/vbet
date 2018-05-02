@@ -1,11 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { CrawlerModule } from './crawler.module';
+import { AppModule } from './crawler.module';
 import { INestApplicationContext } from '@nestjs/common';
 
 let app: INestApplicationContext = null;
 
 async function bootstrap() {
-  app = await NestFactory.createApplicationContext(CrawlerModule);
+  app = await NestFactory.createApplicationContext(AppModule);
 }
 
 // noinspection JSIgnoredPromiseFromCall

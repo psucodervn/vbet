@@ -1,6 +1,9 @@
-import { HttpService, Injectable, Logger } from '@nestjs/common';
+import { HttpService, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { DoneCallback, Job } from 'bull';
-import { League } from './interfaces';
+import { LeagueRequest, Match } from './interfaces';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { MatchSchema } from './schemas/match.schema';
 
 // prettier-ignore
 const headers = {
@@ -15,7 +18,7 @@ const headers = {
 };
 
 // prettier-ignore
-const getUpcomingOptions = (league: League) => ({
+const getUpcomingOptions = (league: LeagueRequest) => ({
   url: `https://game.let.bet/api/game/sports/matches?country_id=` +
   `&league_id=${league.id}&bet_type=${league.bet_type}&size=100&current_page=1` +
   `&sorts=kick_off_time&match_status=NotLiveYet&sport_id=${league.sport_id}&page=1`,
@@ -23,7 +26,7 @@ const getUpcomingOptions = (league: League) => ({
 });
 
 // prettier-ignore
-const getPastOptions = (league: League) => ({
+const getPastOptions = (league: LeagueRequest) => ({
   url: `https://game.let.bet/api/game/sports/matches` +
   `?league_id=${league.id}&bet_type=${league.bet_type}&sorts=-kick_off_time&current_page=1` +
   `&match_status=Live%2CFullTime%2CPostponed%2CCancelled%2CWalkover%2CInterrupted%2CAbandoned%2CRetired` +
@@ -32,35 +35,62 @@ const getPastOptions = (league: League) => ({
 });
 
 @Injectable()
-export class CrawlerService {
+export class CrawlerService implements OnModuleInit {
   private logger: Logger = new Logger(CrawlerService.name);
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    @InjectModel(MatchSchema) private readonly matchModel: Model<Match>,
+  ) {}
+
+  async onModuleInit() {
+    await this.matchModel.ensureIndexes();
+  }
+
+  fetchMatches = async (requestOptions: object): Promise<Match[]> => {
+    const resp = await this.httpService.request(requestOptions).toPromise();
+    if (
+      !resp ||
+      !resp.data ||
+      resp.data.code !== 1 ||
+      !resp.data.data ||
+      !Array.isArray(resp.data.data.content)
+    ) {
+      throw new Error('invalid response');
+    }
+
+    const matches: Match[] = resp.data.data.content;
+    return matches;
+  };
 
   processPast = async (job: Job, done: DoneCallback) => {
-    const league: League = job.data.league;
-    this.logger.log('FetchPast ' + league.name);
-
     try {
-      const resp = { data: { code: 2 } };
-      // const resp = await this.httpService
-      //   .request(getPastOptions(league))
-      //   .toPromise();
-      done(null, 'past ' + JSON.stringify(resp.data.code));
+      const league: LeagueRequest = job.data.league;
+      this.logger.log('FetchPast ' + league.name);
+
+      const matches = await this.fetchMatches(getPastOptions(league));
+      const result = await this.matchModel.insertMany(matches, {
+        ordered: false,
+        rawResult: false,
+      });
+      result.forEach(value => this.logger.error(value.errors.toString()));
+      done(null, 'past ' + result.length);
     } catch (e) {
       done(e);
     }
   };
 
   processUpcoming = async (job: Job, done: DoneCallback) => {
-    const league: League = job.data.league;
-    this.logger.log('FetchUpcoming ' + league.name);
-
     try {
-      const resp = { data: { code: 2 } };
-      // const resp = await this.httpService
-      //   .request(getUpcomingOptions(league))
-      //   .toPromise();
-      done(null, 'upcoming ' + JSON.stringify(resp.data.code));
+      const league: LeagueRequest = job.data.league;
+      this.logger.log('FetchUpcoming ' + league.name);
+
+      const matches = await this.fetchMatches(getPastOptions(league));
+      const result = await this.matchModel.insertMany(matches, {
+        ordered: false,
+        rawResult: false,
+      });
+      result.forEach(value => this.logger.error(value.errors.toString()));
+      done(null, 'past ' + result.length);
     } catch (e) {
       done(e);
     }

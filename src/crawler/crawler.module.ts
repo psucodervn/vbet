@@ -4,8 +4,10 @@ import { CrawlerController } from './crawler.controller';
 import { BullModule, InjectQueue } from 'nest-bull';
 import { CrawlerService } from './crawler.service';
 import { DoneCallback, Job, Queue } from 'bull';
-import { League, Sport } from './interfaces';
+import { LeagueRequest } from './interfaces';
 import { getAppInstance } from './main.crawler';
+import { MongooseModule } from '@nestjs/mongoose';
+import { MatchSchema } from './schemas/match.schema';
 
 const configService = new ConfigService(`config.yaml`);
 const redisOptions = configService.get('redis');
@@ -27,18 +29,12 @@ const UpcomingProcessor = async (job: Job, done: DoneCallback) => {
   return (await getService()).processUpcoming(job, done);
 };
 
-const soccer: Sport = { sport_id: 'soccer', bet_type: 'europe' };
-const leagues: League[] = [
-  {
-    name: 'UEFA Champions League',
-    id: 1040,
-    ...soccer,
-  },
-  {
-    name: 'England Premier League',
-    id: 94,
-    ...soccer,
-  },
+const sport = { sport_id: 'soccer', bet_type: 'europe' };
+const leagues: LeagueRequest[] = [
+  { name: 'UEFA Champions League', id: '1040', ...sport },
+  { name: 'England Premier League', id: '94', ...sport },
+  { name: 'Spain Primera Liga', id: '207', ...sport },
+  { name: 'Italy Serie A', id: '199', ...sport },
 ];
 
 @Module({
@@ -46,77 +42,70 @@ const leagues: League[] = [
     HttpModule,
     // prettier-ignore
     BullModule.forRoot([{
-      name: 'fetchPast',
+      name: 'fetcher',
       options: redisOptions,
       processors: [{
         name: 'fetchPast',
         callback: PastProcessor,
-      }],
-    }, {
-      name: 'fetchUpcoming',
-      options: redisOptions,
-      processors: [{
+      }, {
         name: 'fetchUpcoming',
         callback: UpcomingProcessor,
       }],
     }]),
+    MongooseModule.forFeature([{ name: 'Match', schema: MatchSchema }]),
   ],
   controllers: [CrawlerController],
-  providers: [
-    CrawlerService,
-    {
-      provide: ConfigService,
-      useValue: configService,
-    },
-  ],
+  providers: [CrawlerService],
 })
 export class CrawlerModule implements OnModuleInit {
   private readonly logger = new Logger(CrawlerModule.name);
 
-  constructor(@InjectQueue('fetchUpcoming') readonly queue: Queue) {}
+  constructor(@InjectQueue('fetcher') readonly queue: Queue) {}
 
-  onModuleInit(): any {
-    console.log('CrawlerModule on init');
+  async onModuleInit() {
     for (const league of leagues) {
-      // // past queue
-      // await this.queue.add('fetchPast', { league: Object.assign({}, league) });
-      // // prettier-ignore
-      // const jobPast = await this.queue
-      //   .add('fetchPast', { league: Object.assign({}, league) }, {
-      //     repeat: { cron: '*/10 * * * *' },
-      //     removeOnFail: false,
-      //     removeOnComplete: false,
-      //   });
-      // // prettier-ignore
-      // this.logger.log(`Job ${jobPast.id} for getting past matches of ${league.name} started.`);
+      // past queue
+      // prettier-ignore
+      const jobPast = await this.queue
+        .add('fetchPast', { league }, {
+          repeat: { cron: '*/2 * * * *' },
+          removeOnFail: false,
+          jobId: `bull:fetchPast:${league.id}`,
+        });
+      // prettier-ignore
+      this.logger.log(`Job ${jobPast.id} for getting past matches of ${league.name} started.`);
 
       // upcoming queue
-      // this.queue.add(
-      //   'fetchUpcoming',
-      //   {
-      //     league: Object.assign({}, league),
-      //   },
-      //   {
-      //     jobId: `bull:fetchUpcoming:${league.id}`,
-      //   },
-      // );
       // prettier-ignore
-      // const jobUp = await ;
-      this.queue
-        .add('fetchUpcoming', { league: Object.assign({}, league) }, {
+      const jobUp = await this.queue
+        .add('fetchUpcoming', { league }, {
           repeat: { cron: '*/1 * * * *' },
           removeOnFail: false,
           jobId: `bull:fetchUpcoming:${league.id}`,
         });
       // prettier-ignore
-      // this.logger.log(`Job ${jobUp.id} for getting upcoming matches of ${league.name} started.`);
+      this.logger.log(`Job ${jobUp.id} for getting upcoming matches of ${league.name} started.`);
     }
 
     this.queue.on('completed', (job, result) => {
       this.logger.log(`Job completed! Result: ${result}`);
     });
     this.queue.on('failed', (job, error) => {
-      this.logger.error(error.message);
+      this.logger.error(`Job ${job.id} failed: ${error.message}`);
     });
   }
 }
+
+@Module({
+  imports: [
+    MongooseModule.forRoot(configService.get('mongo').conn),
+    CrawlerModule,
+  ],
+  providers: [
+    {
+      provide: ConfigService,
+      useValue: configService,
+    },
+  ],
+})
+export class AppModule {}

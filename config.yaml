@@ -17,3 +17,4 @@ redis:
 mongo:
   host: 127.0.0.1
   database: vbet
+  conn: mongodb://localhost/vbet
