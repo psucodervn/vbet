@@ -44,3 +44,24 @@ export interface LeagueRequest {
   sport_id: string;
   bet_type: string;
 }
+
+export interface FetchRequest {
+  league_id: string;
+  sport_id: string;
+  bet_type: string;
+  country_id: string;
+  sorts: string[];
+  current_page: number;
+  match_status: string[];
+  page: number;
+  size: number;
+}
+
+export interface FetchResponse {
+  current_page: number;
+  from: number;
+  size: number;
+  total_element: number;
+  total_page: number;
+  content: Match[];
+}

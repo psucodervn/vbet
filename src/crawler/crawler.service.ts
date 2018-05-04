@@ -1,38 +1,11 @@
 import { HttpService, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { DoneCallback, Job } from 'bull';
-import { LeagueRequest, Match } from './interfaces';
+import { DoneCallback, Job, Queue } from 'bull';
+import { Match, FetchRequest, FetchResponse } from './interfaces';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { MatchSchema } from './schemas/match.schema';
-
-// prettier-ignore
-const headers = {
-  'pragma': 'no-cache',
-  'accept-language': 'en-US,en;q=0.9,de;q=0.8,vi;q=0.7',
-  'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36',
-  'accept': 'application/json, text/plain, */*',
-  'cache-control': 'no-cache',
-  'authority': 'game.let.bet',
-  'x-requested-with': 'XMLHttpRequest',
-  'referer': 'https://game.let.bet/sport',
-};
-
-// prettier-ignore
-const getUpcomingOptions = (league: LeagueRequest) => ({
-  url: `https://game.let.bet/api/game/sports/matches?country_id=` +
-  `&league_id=${league.id}&bet_type=${league.bet_type}&size=100&current_page=1` +
-  `&sorts=kick_off_time&match_status=NotLiveYet&sport_id=${league.sport_id}&page=1`,
-  headers,
-});
-
-// prettier-ignore
-const getPastOptions = (league: LeagueRequest) => ({
-  url: `https://game.let.bet/api/game/sports/matches` +
-  `?league_id=${league.id}&bet_type=${league.bet_type}&sorts=-kick_off_time&current_page=1` +
-  `&match_status=Live%2CFullTime%2CPostponed%2CCancelled%2CWalkover%2CInterrupted%2CAbandoned%2CRetired` +
-  `&sport_id=${league.sport_id}&page=1&size=100`,
-  headers,
-});
+import { getOptions } from './crawler.util';
+import { InjectQueue } from 'nest-bull';
 
 @Injectable()
 export class CrawlerService implements OnModuleInit {
@@ -40,13 +13,24 @@ export class CrawlerService implements OnModuleInit {
   constructor(
     private readonly httpService: HttpService,
     @InjectModel(MatchSchema) private readonly matchModel: Model<Match>,
+    @InjectQueue('fetcher') readonly queue: Queue,
   ) {}
 
   async onModuleInit() {
     await this.matchModel.ensureIndexes();
+
+    this.queue.on('completed', (job, result) => {
+      this.logger.log(`Job completed! Result: ${result}`);
+    });
+    this.queue.on('failed', (job, error) => {
+      this.logger.error(`Job ${job.id} failed: ${error.message}`);
+    });
+
+    await this.addUpcomingJob();
+    // await this.addPastJob();
   }
 
-  fetchMatches = async (requestOptions: object): Promise<Match[]> => {
+  fetchMatches = async (requestOptions: object): Promise<FetchResponse> => {
     const resp = await this.httpService.request(requestOptions).toPromise();
     if (
       !resp ||
@@ -58,41 +42,85 @@ export class CrawlerService implements OnModuleInit {
       throw new Error('invalid response');
     }
 
-    const matches: Match[] = resp.data.data.content;
-    return matches;
+    return resp.data.data;
   };
 
-  processPast = async (job: Job, done: DoneCallback) => {
-    try {
-      const league: LeagueRequest = job.data.league;
-      this.logger.log('FetchPast ' + league.name);
+  private saveMatches = async (matches: Match[]) => {
+    await Promise.all(
+      matches.map(async match => {
+        await this.matchModel.findOneAndUpdate(
+          { match_id: match.match_id },
+          match,
+          { upsert: true },
+        );
+      }),
+    );
+  };
 
-      const matches = await this.fetchMatches(getPastOptions(league));
-      const result = await this.matchModel.insertMany(matches, {
-        ordered: false,
-        rawResult: false,
-      });
-      result.forEach(value => this.logger.error(value.errors.toString()));
-      done(null, 'past ' + result.length);
+  processRequest = async (job: Job, done: DoneCallback) => {
+    try {
+      const req: FetchRequest = Object.assign({}, job.data.req);
+      const jobName: string = job.data.jobName;
+
+      const options = getOptions(req);
+      // prettier-ignore
+      this.logger.log('Fetching league: ' + req.league_id + ', url: ' + options.url);
+      const resp = await this.fetchMatches(options);
+      await this.saveMatches(resp.content);
+
+      // prettier-ignore
+      done(null, `fetched ${resp.content.length} in page ${resp.current_page} of total ${resp.total_element}`);
+
+      if (resp.current_page < resp.total_page) {
+        req.current_page += 1;
+        req.page += 1;
+        await this.addJob(req, jobName);
+      }
     } catch (e) {
       done(e);
     }
   };
 
-  processUpcoming = async (job: Job, done: DoneCallback) => {
-    try {
-      const league: LeagueRequest = job.data.league;
-      this.logger.log('FetchUpcoming ' + league.name);
+  private addPastJob = async (league_id: string = '') => {
+    const req: FetchRequest = {
+      current_page: 1,
+      league_id,
+      bet_type: 'europe',
+      country_id: '',
+      page: 1,
+      size: 100,
+      sport_id: 'soccer',
+      sorts: ['-kick_off_time'],
+      match_status: [
+        'Live',
+        'FullTime',
+        'Postponed',
+        'Cancelled',
+        'Walkover',
+        'Interrupted',
+        'Abandoned',
+        'Retired',
+      ],
+    };
+    await this.addJob(req, 'fetchUpcoming');
+  };
 
-      const matches = await this.fetchMatches(getPastOptions(league));
-      const result = await this.matchModel.insertMany(matches, {
-        ordered: false,
-        rawResult: false,
-      });
-      result.forEach(value => this.logger.error(value.errors.toString()));
-      done(null, 'past ' + result.length);
-    } catch (e) {
-      done(e);
-    }
+  private addUpcomingJob = async (league_id: string = '') => {
+    const req: FetchRequest = {
+      current_page: 1,
+      league_id,
+      bet_type: 'europe',
+      country_id: '',
+      page: 1,
+      size: 100,
+      sport_id: 'soccer',
+      sorts: ['kick_off_time'],
+      match_status: ['NotLiveYet'],
+    };
+    await this.addJob(req, 'fetchUpcoming');
+  };
+
+  private addJob = async (req: FetchRequest, jobName: string) => {
+    await this.queue.add(jobName, { req, jobName });
   };
 }

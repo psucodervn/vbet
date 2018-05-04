@@ -1,10 +1,9 @@
-import { HttpModule, Logger, Module, OnModuleInit } from '@nestjs/common';
+import { HttpModule, Module } from '@nestjs/common';
 import { ConfigService } from '../shared/config.service';
 import { CrawlerController } from './crawler.controller';
-import { BullModule, InjectQueue } from 'nest-bull';
+import { BullModule } from 'nest-bull';
 import { CrawlerService } from './crawler.service';
-import { DoneCallback, Job, Queue } from 'bull';
-import { LeagueRequest } from './interfaces';
+import { DoneCallback, Job } from 'bull';
 import { getAppInstance } from './main.crawler';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MatchSchema } from './schemas/match.schema';
@@ -21,21 +20,9 @@ const getService = async () => {
   return service;
 };
 
-const PastProcessor = async (job: Job, done: DoneCallback) => {
-  return (await getService()).processPast(job, done);
+const FetchProcessor = async (job: Job, done: DoneCallback) => {
+  return (await getService()).processRequest(job, done);
 };
-
-const UpcomingProcessor = async (job: Job, done: DoneCallback) => {
-  return (await getService()).processUpcoming(job, done);
-};
-
-const sport = { sport_id: 'soccer', bet_type: 'europe' };
-const leagues: LeagueRequest[] = [
-  { name: 'UEFA Champions League', id: '1040', ...sport },
-  { name: 'England Premier League', id: '94', ...sport },
-  { name: 'Spain Primera Liga', id: '207', ...sport },
-  { name: 'Italy Serie A', id: '199', ...sport },
-];
 
 @Module({
   imports: [
@@ -43,13 +30,19 @@ const leagues: LeagueRequest[] = [
     // prettier-ignore
     BullModule.forRoot([{
       name: 'fetcher',
-      options: redisOptions,
+      options: {
+        redis: redisOptions,
+        defaultJobOptions: {
+          backoff: { type: 'exponential', delay: 5000 },
+        },
+        limiter: { max: 1, duration: 5000 },
+      },
       processors: [{
         name: 'fetchPast',
-        callback: PastProcessor,
+        callback: FetchProcessor,
       }, {
         name: 'fetchUpcoming',
-        callback: UpcomingProcessor,
+        callback: FetchProcessor,
       }],
     }]),
     MongooseModule.forFeature([{ name: 'Match', schema: MatchSchema }]),
@@ -57,44 +50,7 @@ const leagues: LeagueRequest[] = [
   controllers: [CrawlerController],
   providers: [CrawlerService],
 })
-export class CrawlerModule implements OnModuleInit {
-  private readonly logger = new Logger(CrawlerModule.name);
-
-  constructor(@InjectQueue('fetcher') readonly queue: Queue) {}
-
-  async onModuleInit() {
-    for (const league of leagues) {
-      // past queue
-      // prettier-ignore
-      const jobPast = await this.queue
-        .add('fetchPast', { league }, {
-          repeat: { cron: '*/2 * * * *' },
-          removeOnFail: false,
-          jobId: `bull:fetchPast:${league.id}`,
-        });
-      // prettier-ignore
-      this.logger.log(`Job ${jobPast.id} for getting past matches of ${league.name} started.`);
-
-      // upcoming queue
-      // prettier-ignore
-      const jobUp = await this.queue
-        .add('fetchUpcoming', { league }, {
-          repeat: { cron: '*/1 * * * *' },
-          removeOnFail: false,
-          jobId: `bull:fetchUpcoming:${league.id}`,
-        });
-      // prettier-ignore
-      this.logger.log(`Job ${jobUp.id} for getting upcoming matches of ${league.name} started.`);
-    }
-
-    this.queue.on('completed', (job, result) => {
-      this.logger.log(`Job completed! Result: ${result}`);
-    });
-    this.queue.on('failed', (job, error) => {
-      this.logger.error(`Job ${job.id} failed: ${error.message}`);
-    });
-  }
-}
+export class CrawlerModule {}
 
 @Module({
   imports: [
