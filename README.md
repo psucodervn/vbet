@@ -1,7 +1,9 @@
 # wallet-microservices
-[![CircleCI](https://circleci.com/gh/psucodervn/microservices.svg?style=svg)](https://circleci.com/gh/psucodervn/microservices)
+
+[![CircleCI](https://circleci.com/gh/psucodervn/vbet.svg?style=svg)](https://circleci.com/gh/psucodervn/vbet)
 
 ## Description
+
 Testing microservices
 
 ## Installation

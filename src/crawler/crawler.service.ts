@@ -27,7 +27,7 @@ export class CrawlerService implements OnModuleInit {
     });
 
     await this.addUpcomingJob();
-    // await this.addPastJob();
+    await this.addPastJob();
   }
 
   fetchMatches = async (requestOptions: object): Promise<FetchResponse> => {
@@ -60,7 +60,7 @@ export class CrawlerService implements OnModuleInit {
   processRequest = async (job: Job, done: DoneCallback) => {
     try {
       const req: FetchRequest = Object.assign({}, job.data.req);
-      const jobName: string = job.data.jobName;
+      const { jobName, maxPage } = job.data;
 
       const options = getOptions(req);
       // prettier-ignore
@@ -69,9 +69,10 @@ export class CrawlerService implements OnModuleInit {
       await this.saveMatches(resp.content);
 
       // prettier-ignore
-      done(null, `fetched ${resp.content.length} in page ${resp.current_page} of total ${resp.total_element}`);
+      done(null, `[${jobName}] fetched ${resp.content.length} of total ${resp.total_element} matches`
+        + ` in page ${resp.current_page}/${resp.total_page}`);
 
-      if (resp.current_page < resp.total_page) {
+      if (resp.current_page < maxPage && resp.current_page < resp.total_page) {
         req.current_page += 1;
         req.page += 1;
         await this.addJob(req, jobName);
@@ -102,7 +103,15 @@ export class CrawlerService implements OnModuleInit {
         'Retired',
       ],
     };
-    await this.addJob(req, 'fetchUpcoming');
+    const jobName = 'fetchPast';
+    await this.queue.add(
+      jobName,
+      { req, jobName, maxPage: 1 },
+      {
+        repeat: { cron: '*/5 * * * *' },
+        jobId: `bull:jobs:${jobName}`,
+      },
+    );
   };
 
   private addUpcomingJob = async (league_id: string = '') => {
@@ -112,15 +121,29 @@ export class CrawlerService implements OnModuleInit {
       bet_type: 'europe',
       country_id: '',
       page: 1,
-      size: 100,
+      size: 300,
       sport_id: 'soccer',
       sorts: ['kick_off_time'],
       match_status: ['NotLiveYet'],
     };
-    await this.addJob(req, 'fetchUpcoming');
+    const jobName = 'fetchUpcoming';
+    await this.queue.add(
+      jobName,
+      { req, jobName, maxPage: 5 },
+      {
+        repeat: { cron: '0 * * * *' },
+        jobId: `bull:jobs:${jobName}`,
+      },
+    );
   };
 
   private addJob = async (req: FetchRequest, jobName: string) => {
-    await this.queue.add(jobName, { req, jobName });
+    await this.queue.add(
+      jobName,
+      { req, jobName, maxPage: 5 },
+      {
+        jobId: `bull:jobs:${jobName}`,
+      },
+    );
   };
 }
