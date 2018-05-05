@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 rsync -rzvh \
-  dist config.yaml \
+  src data config.yaml \
   package.json yarn.lock \
+  tsconfig.json \
   psucoder@vultr:/home/psucoder/run/microservices
