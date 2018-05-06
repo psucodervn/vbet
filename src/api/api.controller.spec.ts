@@ -15,7 +15,7 @@ describe('ApiController', () => {
   describe('root', () => {
     it('should return "Hello World!"', () => {
       const appController = app.get<ApiController>(ApiController);
-      expect(appController.root()).toBe('Hello World!');
+      expect(appController.getLeagues()).toBeInstanceOf(Array);
     });
   });
 });
