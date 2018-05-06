@@ -63,6 +63,13 @@
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/@nestjs/mongoose/-/mongoose-3.0.1.tgz#11f67fa02ee93462d25d4998303cc3b8292d1ca6"
 
+"@nestjs/swagger@^1.2.2":
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/@nestjs/swagger/-/swagger-1.2.2.tgz#b506e82b59d3a30601047c6bcdbe25ee6a2e21d6"
+  dependencies:
+    lodash "^4.17.4"
+    swagger-ui-express "^2.0.11"
+
 "@nestjs/testing@^5.0.0-rc.2":
   version "5.0.0-rc.2"
   resolved "https://registry.yarnpkg.com/@nestjs/testing/-/testing-5.0.0-rc.2.tgz#9e2469c0310011180c7c3456f32e83523dfd7f01"
@@ -6999,6 +7006,10 @@ supports-color@^5.2.0, supports-color@^5.3.0:
   resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-5.4.0.tgz#1c6b337402c2137605efe19f10fec390f6faab54"
   dependencies:
     has-flag "^3.0.0"
+
+swagger-ui-express@^2.0.11:
+  version "2.0.15"
+  resolved "https://registry.yarnpkg.com/swagger-ui-express/-/swagger-ui-express-2.0.15.tgz#fba85a357b40c0d629e942537199987b8085587d"
 
 symbol-observable@1.0.1:
   version "1.0.1"

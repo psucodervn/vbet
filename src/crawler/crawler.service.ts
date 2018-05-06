@@ -1,9 +1,9 @@
 import { HttpService, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { DoneCallback, Job, Queue } from 'bull';
-import { Match, FetchRequest, FetchResponse } from './interfaces';
+import { Match, FetchRequest, FetchResponse } from '../shared/interfaces';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { MatchSchema } from './schemas/match.schema';
+import { MatchSchema } from '../shared/schemas/match.schema';
 import { getOptions } from './crawler.util';
 import { InjectQueue } from 'nest-bull';
 
@@ -109,7 +109,6 @@ export class CrawlerService implements OnModuleInit {
       { req, jobName, maxPage: 1 },
       {
         repeat: { cron: '*/5 * * * *' },
-        jobId: `bull:jobs:${jobName}`,
       },
     );
   };
@@ -132,18 +131,11 @@ export class CrawlerService implements OnModuleInit {
       { req, jobName, maxPage: 5 },
       {
         repeat: { cron: '0 * * * *' },
-        jobId: `bull:jobs:${jobName}`,
       },
     );
   };
 
   private addJob = async (req: FetchRequest, jobName: string) => {
-    await this.queue.add(
-      jobName,
-      { req, jobName, maxPage: 5 },
-      {
-        jobId: `bull:jobs:${jobName}`,
-      },
-    );
+    await this.queue.add(jobName, { req, jobName, maxPage: 5 }, {});
   };
 }

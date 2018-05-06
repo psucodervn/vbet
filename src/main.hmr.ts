@@ -1,10 +1,10 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app/app.module';
+import { ApiModule } from './api/api.module';
 
 declare const module: any;
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(ApiModule);
   await app.startAllMicroservicesAsync();
   await app.listen(3000);
 

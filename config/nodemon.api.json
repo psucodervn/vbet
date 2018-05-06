@@ -1,6 +1,6 @@
 {
-  "watch": ["src/app", "src/shared", "data", "config.yaml"],
+  "watch": ["src/api", "src/shared", "data", "config.yaml"],
   "ext": "ts,proto",
   "ignore": ["src/**/*.spec.ts"],
-  "exec": "ts-node -r tsconfig-paths/register src/app/main.app.ts"
+  "exec": "ts-node -r tsconfig-paths/register src/api/main.api.ts"
 }

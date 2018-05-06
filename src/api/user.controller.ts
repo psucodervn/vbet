@@ -1,20 +1,13 @@
 import {
-  Get,
   Controller,
-  ParseIntPipe,
+  Get,
   OnModuleInit,
   Param,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { Client, ClientGrpc } from '@nestjs/microservices';
 import { grpcOptions } from '../shared/grpc.options';
 import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/observable/of';
-import 'rxjs/add/observable/from';
-import 'rxjs/add/operator/map';
-import 'rxjs/add/operator/toArray';
-import 'rxjs/add/operator/count';
-import 'rxjs/add/operator/single';
-import { AppService } from './app.service';
 
 interface User {
   id: number;
@@ -36,7 +29,7 @@ interface CrawlerService {
 }
 
 @Controller()
-export class AppController implements OnModuleInit {
+export class UserController implements OnModuleInit {
   // prettier-ignore
   @Client(grpcOptions('user'))
   private readonly client: ClientGrpc;
@@ -45,8 +38,6 @@ export class AppController implements OnModuleInit {
   @Client(grpcOptions('crawler'))
   private readonly crawlerClient: ClientGrpc;
   private crawlerService: CrawlerService;
-
-  constructor(private readonly appService: AppService) {}
 
   onModuleInit(): any {
     this.userService = this.client.getService<UserService>('UserService');
@@ -68,11 +59,6 @@ export class AppController implements OnModuleInit {
       .findOne({ id: parseInt(id, 10) })
       .map(v => v.user ? v.user : {})
       .toPromise();
-  }
-
-  @Get('/')
-  root() {
-    return this.appService.root();
   }
 
   @Get('/crawler')

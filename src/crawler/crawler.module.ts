@@ -6,7 +6,7 @@ import { CrawlerService } from './crawler.service';
 import { DoneCallback, Job } from 'bull';
 import { getAppInstance } from './main.crawler';
 import { MongooseModule } from '@nestjs/mongoose';
-import { MatchSchema } from './schemas/match.schema';
+import { MatchSchema } from '../shared/schemas/match.schema';
 
 const configService = new ConfigService(`config.yaml`);
 const redisOptions = configService.get('redis');

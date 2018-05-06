@@ -22,6 +22,7 @@
     "@nestjs/core": "^5.0.0-rc.2",
     "@nestjs/microservices": "^5.0.0-rc.2",
     "@nestjs/mongoose": "^3.0.1",
+    "@nestjs/swagger": "^1.2.2",
     "@nestjs/testing": "^5.0.0-rc.2",
     "@nestjs/websockets": "^5.0.0-rc.2",
     "bull": "^3.4.1",

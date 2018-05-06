@@ -1,4 +1,4 @@
-import { FetchRequest } from './interfaces';
+import { FetchRequest } from '../shared/interfaces';
 
 export const serialize = (obj, prefix = '') => {
   const str: string[] = [];
